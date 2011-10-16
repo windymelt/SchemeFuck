@@ -1,0 +1,35 @@
+(define Y
+  (lambda (f)
+    ((lambda (h) (h h))
+     (lambda (g)
+       (f (lambda arg (apply (g g) arg)))
+       )
+     )
+    )
+  )
+
+(define PUSHSTACK (lambda (x) (set! STACK (cons x STACK))))
+(define POPSTACK (lambda () (car STACK)))
+(define KILLSTACK (lambda () (set! STACK (force (cdr STACK)))))
+(define BF (lambda (x mem off)
+
+	     (let ((Y (string-ref x 0)))
+	     (begin
+	       (cond
+		((eqv? Y #\>) (set! off (+ off 1)))
+		((eqv? Y #\<) (set! off (- off 1)))
+		((eqv? Y #\+) (vector-set! mem off (force (+ (vector-ref mem off) 1))))
+		((eqv? Y #\-) (vector-set! mem off (force (- (vector-ref mem off) 1))))
+		((eqv? Y #\.) (print (integer->char (vector-ref mem off))))
+		((eqv? Y #\,) (vector-set! mem off (char->integer (string-ref (port->string (standard-input-port)) 0))))
+		((eqv? Y #\[) (begin (call/cc (lambda (c) (PUSHSTACK c))) (BF (substring x 1 (string-length x)) mem off)))
+		((eqv? Y #\]) (if (not (= 0 (vector-ref mem off))) (POPSTACK) (KILLSTACK)))
+	       )
+	      ;:(call/cc (lambda (c) (begin (set! PRGCNT c) (break))))
+	      (if (= (string-length x) 1) #t (BF (substring x 1 (string-length x)) mem off))
+
+	     )
+	     )
+	     )
+	     )
+(define HELLOWORLD (lambda (mem) (BF "+++++++++[>++++++++>+++++++++++>+++++<<<-]>.>++.+++++++..+++.>-.------------.<++++++++.--------.+++.------.--------.>+." mem 0)))
